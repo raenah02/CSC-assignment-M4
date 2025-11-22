@@ -1,2 +1,4 @@
-b9c7bbe (HEAD -> main, origin/main, origin/HEAD) Task 1.1: Fixed CheckStyle issues
+92e80d2 (HEAD -> main) Task 2.1
+0801162 (origin/main, origin/HEAD) Task 1.2
+b9c7bbe Task 1.1: Fixed CheckStyle issues
 b438cd7 Initial commit

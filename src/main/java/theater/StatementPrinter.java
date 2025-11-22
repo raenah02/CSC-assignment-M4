@@ -8,7 +8,6 @@ import java.util.Map;
  * Generates a textual statement for a customer's invoice.
  */
 public class StatementPrinter {
-
     private static final int TRAGEDY_BASE_AMOUNT = 40000;
     private static final int TRAGEDY_EXTRA_AMOUNT_PER_PERSON = 1000;
     private static final int TRAGEDY_AUDIENCE_THRESHOLD = 30;
@@ -45,23 +44,21 @@ public class StatementPrinter {
 
         for (Performance performance : invoice.getPerformances()) {
             final Play play = getPlay(performance);
+            final int amount = getAmount(performance);
 
             result.append(String.format("  %s: %s (%s seats)%n",
                     play.getName(),
-                    frmt.format(getAmount(performance) / CURRENCY_CONVERSION_FACTOR),
+                    frmt.format(amount / CURRENCY_CONVERSION_FACTOR),
                     performance.getAudience()));
 
-            totalAmount += getAmount(performance);
-            volumeCredits += Math.max(performance.getAudience() - Constants.BASE_VOLUME_CREDIT_THRESHOLD, 0);
-
-            if ("comedy".equals(play.getType())) {
-                volumeCredits += performance.getAudience() / Constants.COMEDY_EXTRA_VOLUME_FACTOR;
-            }
+            totalAmount += amount;
+            volumeCredits += getVolumeCredits(performance);
         }
 
         result.append(String.format("Amount owed is %s%n",
                 frmt.format(totalAmount / CURRENCY_CONVERSION_FACTOR)));
         result.append(String.format("You earned %s credits%n", volumeCredits));
+
         return result.toString();
     }
 
@@ -72,7 +69,6 @@ public class StatementPrinter {
     private int getAmount(Performance performance) {
         final Play play = getPlay(performance);
         int amount;
-
         switch (play.getType()) {
             case "tragedy":
                 amount = TRAGEDY_BASE_AMOUNT;
@@ -93,8 +89,17 @@ public class StatementPrinter {
             default:
                 throw new RuntimeException(String.format("unknown type: %s", play.getType()));
         }
-
         return amount;
     }
+
+    private int getVolumeCredits(Performance performance) {
+        int result = Math.max(performance.getAudience() - Constants.BASE_VOLUME_CREDIT_THRESHOLD, 0);
+        if ("comedy".equals(getPlay(performance).getType())) {
+            result += performance.getAudience() / Constants.COMEDY_EXTRA_VOLUME_FACTOR;
+        }
+        return result;
+    }
 }
+
+
 
