@@ -8,6 +8,7 @@ import java.util.Map;
  * Generates a textual statement for a customer's invoice.
  */
 public class StatementPrinter {
+
     private static final int TRAGEDY_BASE_AMOUNT = 40000;
     private static final int TRAGEDY_EXTRA_AMOUNT_PER_PERSON = 1000;
     private static final int TRAGEDY_AUDIENCE_THRESHOLD = 30;
@@ -36,26 +37,27 @@ public class StatementPrinter {
      * @throws RuntimeException if one of the play types is unknown
      */
     public String statement() {
-        int totalAmount = 0;
-        int volumeCredits = 0;
-        final StringBuilder result = new StringBuilder("Statement for "
-                + invoice.getCustomer() + System.lineSeparator());
+        final StringBuilder result = new StringBuilder(
+                "Statement for " + invoice.getCustomer() + System.lineSeparator());
+
+        final int totalAmount = getTotalAmount();
+        final int volumeCredits = getTotalVolumeCredits();
 
         for (Performance performance : invoice.getPerformances()) {
-            final int amount = getAmount(performance);
             final Play play = getPlay(performance);
-
-            result.append(String.format("  %s: %s (%s seats)%n",
+            result.append(String.format(
+                    "  %s: %s (%s seats)%n",
                     play.getName(),
-                    usd(amount),
+                    usd(getAmount(performance)),
                     performance.getAudience()));
-
-            totalAmount += amount;
-            volumeCredits += getVolumeCredits(performance);
         }
 
-        result.append(String.format("Amount owed is %s%n", usd(totalAmount)));
-        result.append(String.format("You earned %s credits%n", volumeCredits));
+        result.append(String.format(
+                "Amount owed is %s%n",
+                usd(totalAmount)));
+        result.append(String.format(
+                "You earned %s credits%n",
+                volumeCredits));
 
         return result.toString();
     }
@@ -66,28 +68,30 @@ public class StatementPrinter {
 
     private int getAmount(Performance performance) {
         final Play play = getPlay(performance);
-        int amount;
+        int result = 0;
+
         switch (play.getType()) {
             case "tragedy":
-                amount = TRAGEDY_BASE_AMOUNT;
+                result = TRAGEDY_BASE_AMOUNT;
                 if (performance.getAudience() > TRAGEDY_AUDIENCE_THRESHOLD) {
-                    amount += TRAGEDY_EXTRA_AMOUNT_PER_PERSON
+                    result += TRAGEDY_EXTRA_AMOUNT_PER_PERSON
                             * (performance.getAudience() - TRAGEDY_AUDIENCE_THRESHOLD);
                 }
                 break;
             case "comedy":
-                amount = Constants.COMEDY_BASE_AMOUNT;
+                result = Constants.COMEDY_BASE_AMOUNT;
                 if (performance.getAudience() > Constants.COMEDY_AUDIENCE_THRESHOLD) {
-                    amount += Constants.COMEDY_OVER_BASE_CAPACITY_AMOUNT
+                    result += Constants.COMEDY_OVER_BASE_CAPACITY_AMOUNT
                             + (Constants.COMEDY_OVER_BASE_CAPACITY_PER_PERSON
                             * (performance.getAudience() - Constants.COMEDY_AUDIENCE_THRESHOLD));
                 }
-                amount += Constants.COMEDY_AMOUNT_PER_AUDIENCE * performance.getAudience();
+                result += Constants.COMEDY_AMOUNT_PER_AUDIENCE * performance.getAudience();
                 break;
             default:
                 throw new RuntimeException(String.format("unknown type: %s", play.getType()));
         }
-        return amount;
+
+        return result;
     }
 
     private int getVolumeCredits(Performance performance) {
@@ -98,16 +102,28 @@ public class StatementPrinter {
         return result;
     }
 
-    /**
-     * Converts an amount in cents to a formatted USD string.
-     *
-     * @param amount the amount in cents
-     * @return the formatted USD string
-     */
+    private int getTotalVolumeCredits() {
+        int result = 0;
+        for (Performance performance : invoice.getPerformances()) {
+            result += getVolumeCredits(performance);
+        }
+        return result;
+    }
+
+    private int getTotalAmount() {
+        int result = 0;
+        for (Performance performance : invoice.getPerformances()) {
+            result += getAmount(performance);
+        }
+        return result;
+    }
+
     private String usd(int amount) {
-        return NumberFormat.getCurrencyInstance(Locale.US).format(amount / (double) Constants.PERCENT_FACTOR);
+        return NumberFormat.getCurrencyInstance(Locale.US).format(amount / CURRENCY_CONVERSION_FACTOR);
     }
 }
+
+
 
 
 
